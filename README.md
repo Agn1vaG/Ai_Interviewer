@@ -1,159 +1,55 @@
-# AI Interviewer – Intelligent Technical Interview Platform
+# AI Interview Trainer
 
-AI-powered technical interviewer that simulates real interview scenarios and evaluates responses in real time.
+An AI-powered mock interview application that generates role-specific technical questions, adapts follow-ups based on your responses, and provides a performance summary at the end.
 
----
-
-
-## Overview
-
-AI Interviewer is an automated technical interview system that simulates real interview scenarios. It generates questions, evaluates answers, and provides structured feedback without requiring a human interviewer. The platform is designed to assess problem-solving ability, technical knowledge, and response quality in a controlled environment.
-
----
-
-## Features
-
-### Automated Interview Flow
-
-* Dynamic question generation
-* Multi-domain support (DSA, Backend, Frontend, Databases)
-* Step-by-step interview progression
-
-### Response Evaluation
-
-* Analyzes user answers
-* Evaluates correctness and depth
-* Identifies knowledge gaps
-
-### Interactive System
-
-* Continuous question-response cycle
-* Context-aware follow-up questions
-* Simulates real interview conditions
-
-### Feedback Engine
-
-* Highlights strengths and weaknesses
-* Provides improvement insights
-
----
-
-## Tech Stack
-
-* Backend: Python, Flask
-* Frontend: HTML, CSS, JavaScript
-* AI Integration: LLM-based processing
-* Environment Management: python-dotenv
-
----
-
-## Project Structure
+## Architecture
 
 ```
-project/
-│
-├── start.py
-├── app/
-│   ├── controller/
-│   │   ├── home_controller.py
-│   │   ├── submit_controller.py
-│   │   ├── polling_controller.py
-│   │   ├── reload_controller.py
-│   │   └── coder_controller.py
-│
-├── templates/
-│   └── index.html
-│
-├── static/
-│
-└── .env
+app/
+├── main.py                  # FastAPI application entry point
+├── config.py                # Centralized settings (env-based)
+├── controllers/
+│   └── interview.py         # Route handlers (API layer)
+├── services/
+│   ├── ai.py                # OpenAI integration
+│   └── interview.py         # Interview session & business logic
+├── models/
+│   └── schemas.py           # Pydantic request/response models
+└── templates/
+    └── index.html           # Frontend UI
 ```
 
----
+## Setup
 
-## Requirements
+1. **Clone & install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-* Python 3.8+
-* pip
+2. **Configure environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your OpenAI API key
+   ```
 
----
+3. **Run the server**
+   ```bash
+   uvicorn app.main:app --reload
+   ```
 
-## Installation
-
-```
-git clone <your-repo-link>
-cd <project-folder>
-pip install -r requirements.txt
-```
-
----
-
-## Environment Variables
-
-Create a `.env` file:
-
-```
-OPENAI_API_KEY=your_key_here
-```
-
----
-
-## Run the Application
-
-```
-python start.py
-```
-
-Access the app at:
-
-```
-http://127.0.0.1:8000
-```
-
----
+4. Open **http://localhost:8000** in your browser.
 
 ## API Endpoints
 
-| Endpoint             | Method | Description                    |
-| -------------------- | ------ | ------------------------------ |
-| `/`                  | GET    | Load main interface            |
-| `/flask-api/submit`  | POST   | Start interview / submit input |
-| `/flask-api/polling` | POST   | Fetch ongoing results          |
-| `/flask-api/reload`  | POST   | Reload previous results        |
-| `/flask-api/code`    | POST   | Generate code                  |
-| `/flask-api/health`  | GET    | Health check                   |
-
----
+| Method | Endpoint               | Description              |
+|--------|------------------------|--------------------------|
+| GET    | `/`                    | Serve the frontend UI    |
+| POST   | `/api/interview/start` | Start a new interview    |
+| POST   | `/api/interview/answer`| Submit answer, get next Q|
 
 ## How It Works
 
-1. User starts an interview session
-2. System generates a question based on domain
-3. User submits a response
-4. Backend evaluates the answer
-5. Feedback is generated
-6. Next question is triggered
-7. Process repeats
-
----
-
-## Limitations
-
-* Uses polling instead of real-time streaming
-* Evaluation quality depends on input prompts
-* No persistent session storage
-
----
-
-## Future Improvements
-
-* WebSocket-based real-time interaction
-* Voice-based interview support
-* Candidate scoring and ranking system
-* Authentication and user profiles
-
----
-
-## License
-
-This project is for educational and demonstration purposes.
+1. Enter your target role and years of experience.
+2. The AI interviewer asks 10 questions, one at a time.
+3. Each follow-up is tailored based on your previous answer.
+4. After the final question, you receive a performance summary with strengths, weaknesses, and a rating.
