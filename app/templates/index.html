@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Interview Trainer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+  .container { width: 100%; max-width: 640px; padding: 2rem; }
+  h1 { text-align: center; margin-bottom: 1.5rem; color: #38bdf8; }
+  .card { background: #1e293b; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
+  label { display: block; margin-bottom: .3rem; font-size: .9rem; color: #94a3b8; }
+  input, textarea { width: 100%; padding: .7rem; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 1rem; margin-bottom: 1rem; }
+  textarea { resize: vertical; min-height: 100px; }
+  button { width: 100%; padding: .75rem; border: none; border-radius: 8px; background: #2563eb; color: #fff; font-size: 1rem; cursor: pointer; transition: background .2s; }
+  button:hover { background: #1d4ed8; }
+  button:disabled { background: #334155; cursor: not-allowed; }
+  .badge { display: inline-block; background: #334155; padding: .25rem .75rem; border-radius: 20px; font-size: .8rem; margin-bottom: 1rem; }
+  .question-text { font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem; white-space: pre-wrap; }
+  .history { max-height: 300px; overflow-y: auto; margin-bottom: 1rem; padding: .5rem; background: #0f172a; border-radius: 8px; font-size: .9rem; }
+  .history div { padding: .5rem 0; border-bottom: 1px solid #1e293b; }
+  .history .q { color: #38bdf8; }
+  .history .a { color: #a5b4fc; }
+  .summary { white-space: pre-wrap; line-height: 1.7; }
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: .5rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎯 AI Interview Trainer</h1>
+
+  <!-- Setup -->
+  <div class="card" id="setup">
+    <label for="role">Target Role</label>
+    <input id="role" placeholder="e.g. Backend Engineer, Data Scientist">
+    <label for="yoe">Years of Experience</label>
+    <input id="yoe" type="number" min="0" max="40" placeholder="e.g. 3">
+    <button id="startBtn" onclick="startInterview()">Start Interview</button>
+  </div>
+
+  <!-- Interview -->
+  <div class="card" id="interview" style="display:none">
+    <div class="badge" id="counter">Question 1 / 10</div>
+    <div id="history" class="history" style="display:none"></div>
+    <div class="question-text" id="questionText"></div>
+    <textarea id="answerInput" placeholder="Type your answer..."></textarea>
+    <button id="submitBtn" onclick="submitAnswer()">Submit Answer</button>
+  </div>
+
+  <!-- Summary -->
+  <div class="card" id="summaryCard" style="display:none">
+    <h2 style="margin-bottom:1rem;color:#38bdf8;">📊 Interview Summary</h2>
+    <div class="summary" id="summaryText"></div>
+    <button style="margin-top:1.5rem" onclick="location.reload()">Start New Interview</button>
+  </div>
+</div>
+
+<script>
+let sessionId = null;
+
+async function startInterview() {
+  const role = document.getElementById('role').value.trim();
+  const yoe = parseInt(document.getElementById('yoe').value);
+  if (!role || isNaN(yoe)) return alert('Please fill in both fields.');
+
+  const btn = document.getElementById('startBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Generating question...';
+
+  const res = await fetch('/api/interview/start', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({role, yoe})
+  });
+  const data = await res.json();
+  sessionId = data.session_id;
+
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('interview').style.display = 'block';
+  document.getElementById('questionText').textContent = data.question;
+  document.getElementById('counter').textContent = `Question ${data.question_number} / 10`;
+  document.getElementById('answerInput').focus();
+}
+
+async function submitAnswer() {
+  const input = document.getElementById('answerInput');
+  const answer = input.value.trim();
+  if (!answer) return;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Thinking...';
+
+  const hist = document.getElementById('history');
+  const currentQ = document.getElementById('questionText').textContent;
+  hist.innerHTML += `<div class="q">Q: ${currentQ}</div><div class="a">A: ${answer}</div>`;
+  hist.style.display = 'block';
+  hist.scrollTop = hist.scrollHeight;
+
+  const res = await fetch('/api/interview/answer', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({session_id: sessionId, answer})
+  });
+  const data = await res.json();
+
+  if (data.done) {
+    document.getElementById('interview').style.display = 'none';
+    document.getElementById('summaryCard').style.display = 'block';
+    document.getElementById('summaryText').textContent = data.question;
+  } else {
+    document.getElementById('questionText').textContent = data.question;
+    document.getElementById('counter').textContent = `Question ${data.question_number} / 10`;
+    input.value = '';
+    btn.disabled = false;
+    btn.innerHTML = 'Submit Answer';
+    input.focus();
+  }
+}
+</script>
+</body>
+</html>
